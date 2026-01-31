@@ -1,0 +1,8 @@
+{
+  "name": "Copy of جسر الشفاء - Shifa Bridge",
+  "description": "منصة طبية متطورة تربط المرضى بالأطباء مع نظام حجز ذكي ودردشة تفاعلية",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
