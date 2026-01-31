@@ -5,19 +5,19 @@ interface DoctorDashboardProps {
   appointments: Appointment[];
   user: User;
   onUpdateStatus: (id: string, status: AppointmentStatus) => void;
-  onUpdateSettings: (maxAppts: number, isClinicClosed: boolean) => Promise<void>;
+  onUpdateSettings: (maxAppts: number, isClinicClosed: boolean, locationUrl: string) => Promise<void>;
 }
 
 const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ appointments, user, onUpdateStatus, onUpdateSettings }) => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [maxAppointments, setMaxAppointments] = useState<number>(user.maxAppointmentsPerDay || 20);
+  const [locationUrl, setLocationUrl] = useState<string>(user.locationUrl || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  // تحديث القيمة المحلية عند تغير بيانات المستخدم من الأب
   useEffect(() => {
-    if (user.maxAppointmentsPerDay) {
-      setMaxAppointments(user.maxAppointmentsPerDay);
-    }
-  }, [user.maxAppointmentsPerDay]);
+    setMaxAppointments(user.maxAppointmentsPerDay || 20);
+    setLocationUrl(user.locationUrl || '');
+  }, [user]);
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   
@@ -27,11 +27,16 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ appointments, user, o
     return { pending, todays };
   }, [appointments, todayStr]);
 
-  const handleSaveCapacity = async () => {
+  const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // نرسل القيمة الجديدة مع الحفاظ على حالة العيادة الحالية
-      await onUpdateSettings(maxAppointments, user.isClinicClosed || false);
+      // التأكد من أن الرابط يبدأ بـ http في حال لم يضفه الطبيب
+      let finalUrl = locationUrl.trim();
+      if (finalUrl && !finalUrl.startsWith('http')) {
+        finalUrl = 'https://' + finalUrl;
+      }
+      await onUpdateSettings(maxAppointments, user.isClinicClosed || false, finalUrl);
+      setIsSettingsOpen(false);
     } finally {
       setIsSaving(false);
     }
@@ -39,38 +44,80 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ appointments, user, o
 
   return (
     <div className="space-y-6 sm:space-y-10 font-arabic animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
-      {/* Header & Stats */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/50">
         <div className="text-center md:text-right space-y-2">
            <h2 className="text-2xl sm:text-4xl font-black text-slate-800 tracking-tighter leading-tight">أهلاً د. {user.name} 🩺</h2>
-           <p className="text-slate-500 font-bold text-sm sm:text-lg">إدارة المواعيد والطاقة الاستيعابية</p>
+           <p className="text-slate-500 font-bold text-sm sm:text-lg">إدارة المواعيد وكشوفات اليوم</p>
         </div>
         
-        {/* Capacity Setting Box - الميزة الجديدة */}
-        <div className="bg-slate-50 p-4 rounded-3xl border border-slate-200 flex flex-col sm:flex-row items-center gap-4">
-          <div className="text-right">
-            <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">عدد مواعيد اليوم</label>
-            <input 
-              type="number" 
-              value={maxAppointments}
-              onChange={(e) => setMaxAppointments(Number(e.target.value))}
-              className="w-20 p-2 bg-white border border-slate-200 rounded-xl text-center font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-          <button 
-            onClick={handleSaveCapacity}
-            disabled={isSaving}
-            className={`px-6 py-3 rounded-2xl font-black text-xs transition-all shadow-lg ${
-              isSaving ? 'bg-slate-300 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'
-            }`}
-          >
-            {isSaving ? 'جاري الحفظ...' : 'تحديث السعة'}
-          </button>
-        </div>
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl font-black text-sm hover:bg-slate-100 hover:border-slate-300 transition-all shadow-sm active:scale-95 group"
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-500">⚙️</span>
+          إعدادات العيادة
+        </button>
       </header>
 
+      {/* نافذة الإعدادات المنبثقة */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-indigo-600 p-8 text-white">
+              <h3 className="text-2xl font-black">إعدادات عيادتك ⚙️</h3>
+              <p className="text-indigo-100 text-sm mt-1 font-bold">خصص نظام الحجز والموقع الجغرافي</p>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-black text-slate-700 mr-1">السعة اليومية للمواعيد</label>
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="50" 
+                    value={maxAppointments}
+                    onChange={(e) => setMaxAppointments(Number(e.target.value))}
+                    className="flex-1 h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  />
+                  <span className="w-12 h-12 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-xl font-black">{maxAppointments}</span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-bold">أقصى عدد مرضى يمكنهم الحجز في يوم واحد</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-black text-slate-700 mr-1">رابط الموقع (Google Maps)</label>
+                <input 
+                  type="url" 
+                  placeholder="انسخ الرابط من خرائط جوجل هنا..."
+                  value={locationUrl}
+                  onChange={(e) => setLocationUrl(e.target.value)}
+                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-left font-mono text-sm text-indigo-600 outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
+                />
+                <p className="text-[10px] text-slate-400 font-bold">هذا الرابط سيظهر للمرضى لتسهيل وصولهم للعيادة</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black hover:bg-slate-200 transition-all"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  onClick={handleSaveSettings}
+                  disabled={isSaving}
+                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات ✨'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
-        {/* Daily Schedule Section */}
         <section className="bg-white rounded-[2rem] sm:rounded-[3rem] border border-slate-100 p-6 sm:p-10 shadow-xl relative overflow-hidden">
            <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-3">
@@ -115,7 +162,6 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ appointments, user, o
            )}
         </section>
 
-        {/* Pending Requests Section */}
         <section className="bg-white rounded-[2rem] sm:rounded-[3rem] border border-slate-100 p-6 sm:p-10 shadow-xl relative overflow-hidden">
             <h3 className="text-xl sm:text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
                <span className="w-2 h-6 bg-amber-600 rounded-full"></span>
