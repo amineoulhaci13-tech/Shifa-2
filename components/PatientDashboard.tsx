@@ -31,7 +31,6 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ appointments, docto
   const [showSuccess, setShowSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // جلب بيانات الطبيب المختار من المصفوفة الحية لضمان الحصول على أحدث "سعة"
   const currentDoctor = useMemo(() => 
     doctors.find(d => d.id === selectedDoctorId), 
     [doctors, selectedDoctorId]
@@ -171,7 +170,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ appointments, docto
            
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
              {filteredDoctors.map(d => (
-               <div key={d.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-300 group">
+               <div key={d.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-300 group flex flex-col">
                  <div className="flex items-start gap-5">
                     <img src={d.avatar} className="w-20 h-20 rounded-2xl border-2 border-slate-50 object-cover" alt={d.name} />
                     <div className="flex-1 text-right">
@@ -180,17 +179,30 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ appointments, docto
                       <p className="text-slate-400 text-xs font-bold mt-1">عيادة مختصة</p>
                     </div>
                  </div>
-                 <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
+                 <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between flex-1">
                     <div className="text-right">
                        <p className="text-[10px] text-slate-400 font-black">السعة اليومية</p>
                        <p className="text-sm font-black text-indigo-600">{d.maxAppointmentsPerDay || 20} حالة</p>
                     </div>
-                    <button 
-                       onClick={() => { setSelectedDoctorId(d.id); setShowModal(true); }} 
-                       className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-8 rounded-2xl font-black text-sm transition-all active:scale-95"
-                    >
-                       احجز الآن
-                    </button>
+                    <div className="flex items-center gap-2">
+                       {d.locationUrl && (
+                         <a 
+                           href={d.locationUrl} 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           title="عرض الموقع على خرائط جوجل"
+                           className="flex items-center justify-center w-12 h-12 bg-green-50 text-green-600 hover:bg-green-600 hover:text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-sm shadow-green-100"
+                         >
+                           <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                         </a>
+                       )}
+                       <button 
+                          onClick={() => { setSelectedDoctorId(d.id); setShowModal(true); }} 
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-8 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg shadow-indigo-100"
+                       >
+                          احجز الآن
+                       </button>
+                    </div>
                  </div>
                </div>
              ))}
