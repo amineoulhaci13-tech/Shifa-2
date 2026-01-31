@@ -2,16 +2,15 @@
 export default {
   content: [
     "./index.html",
-    "./**/*.{js,ts,jsx,tsx}",
+    "./*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./services/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       fontFamily: {
         arabic: ['"IBM Plex Sans Arabic"', 'sans-serif'],
       },
-      // The animations like 'animate-in', 'fade-in' etc. are likely from a plugin (tailwindcss-animate)
-      // which the CDN version includes. To replicate the effect without adding a new dependency,
-      // we add a simple keyframe animation that applies to the 'animate-in' class.
       keyframes: {
         'content-show': {
           from: { opacity: '0', transform: 'translateY(1rem)' },
