@@ -1,0 +1,15 @@
+{
+  "short_name": "جسر الشفاء",
+  "name": "منصة جسر الشفاء الطبية",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff"
+}
